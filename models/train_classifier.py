@@ -21,7 +21,16 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.multioutput import MultiOutputClassifier
 
 def load_data(database_filepath):
-    # load data from database
+    """Load data from database.
+
+    Args:
+    database_filepath: filepath for the database file
+
+    Returns:
+    X: dataframe stores the message
+    Y: dataframe stores the categories
+    category_names: a list of all category column names
+    """               
     engine = create_engine('sqlite:///'+database_filepath)
     df = pd.read_sql("SELECT * from DisasterResponse", engine)
     X = df['message']
@@ -31,6 +40,14 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    """Tokenize text.
+
+    Args:
+    text: message text
+
+    Returns:
+    clean_tokens: clean text tokens
+    """                  
     # Normalize text
     text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
     
@@ -48,6 +65,14 @@ def tokenize(text):
 
 
 def build_model():
+    """Build a machine learning model.
+
+    Args:
+    None
+
+    Returns:
+    model: a machine learning model
+    """                     
     # Build a machine learning pipeline
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize)),
@@ -67,14 +92,33 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """Report evaluation scores for the model.
+
+    Args:
+    model: a machine learning model
+    X_test: messages in test dataset
+    Y_test: categories in test dataset
+    category_names: a list of all category column names
+
+    Returns:
+    classification report for each category
+    """                         
     y_pred = model.predict(X_test)
-    # classification report for each category
     for i in range(len(category_names)):
         print('Performance report for category: {}'.format(category_names[i]))
         print(classification_report(np.array(Y_test)[:,i], y_pred[:,i]), '---------------------------------------------------')  
 
 
 def save_model(model, model_filepath):
+    """Export model as a pickle file.
+
+    Args:
+    model: a machine learning model
+    model_filepath: filepath to save the model
+
+    Returns:
+    None
+    """                             
     with open(model_filepath, 'wb') as file:
         pickle.dump(model, file)
 

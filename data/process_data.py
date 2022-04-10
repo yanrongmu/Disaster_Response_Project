@@ -4,12 +4,15 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
-    '''
-    INPUT 
-        Filepath for the input files     
-    OUTPUT
-        A dataframe that merged two input files
-    '''    
+    """Load data and merge together.
+
+    Args:
+    messages_filepath: filepath for the messages file    
+    categories_filepath: filepath for the categories file 
+
+    Returns:
+    df: dataframe that merged two input files
+    """       
     # load datasets
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
@@ -21,6 +24,14 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+   """Clean data to split categories and remove duplicates.
+
+    Args:
+    df: dataframe that merged two input files
+
+    Returns:
+    df: dataframe after clean process
+    """           
     # Split categories into separate category columns
     categories = df['categories'].str.split(";", expand=True)
 
@@ -50,7 +61,15 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
-    # Save the clean dataset into an sqlite database
+   """Save the clean dataset into an sqlite database.
+
+    Args:
+    df: dataframe of cleaned data
+    database_filename: database filename to be saved 
+
+    Returns: 
+    None
+    """        
     engine = create_engine('sqlite:///'+database_filename)
     df.to_sql('DisasterResponse', engine, if_exists = 'replace', index=False)
 
