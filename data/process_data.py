@@ -4,6 +4,12 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
+    '''
+    INPUT 
+        Filepath for the input files     
+    OUTPUT
+        A dataframe that merged two input files
+    '''    
     # load datasets
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)

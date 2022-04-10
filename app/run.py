@@ -1,6 +1,7 @@
 import json
 import plotly
 import pandas as pd
+import joblib
 
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
@@ -8,7 +9,7 @@ from nltk.tokenize import word_tokenize
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
-from sklearn.externals import joblib
+# from sklearn.externals import joblib
 from sqlalchemy import create_engine
 
 
@@ -26,23 +27,31 @@ def tokenize(text):
     return clean_tokens
 
 # load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
+engine = create_engine('sqlite:///../data/DisasterResponse.db')
+df = pd.read_sql_table('DisasterResponse', engine)
 
 # load model
-model = joblib.load("../models/your_model_name.pkl")
-
+model = joblib.load("../models/classifier.pkl")
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
 @app.route('/index')
 def index():
-    
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    
+
+    # message category counts
+    categories =  df.drop(['id', 'message', 'original', 'genre'], axis=1)
+    cate_counts = (categories == 1).sum()
+    cate_names = list(cate_counts.index)
+
+    # category count in news genre
+    news_genre = df[df.genre == 'news'].drop(['id', 'message', 'original', 'genre'], axis=1)
+    news_cate_counts = (news_genre == 1).sum()
+    news_cate_names = list(news_cate_counts.index)
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -63,7 +72,47 @@ def index():
                     'title': "Genre"
                 }
             }
-        }
+        },
+
+        # Distribution of Message Categories
+        {
+            'data': [
+                Bar(
+                    x=cate_names,
+                    y=cate_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Categories"
+                }
+            }    
+        },
+
+        # Distribution of Message Categories in News Genre
+        {
+            'data': [
+                Bar(
+                    x=news_cate_names,
+                    y=news_cate_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message Categories in News Genre',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Categories"
+                }
+            }         
+        }              
     ]
     
     # encode plotly graphs in JSON

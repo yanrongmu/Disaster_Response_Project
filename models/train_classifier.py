@@ -1,24 +1,82 @@
 import sys
 
+import nltk
+nltk.download(['punkt', 'stopwords', 'wordnet', 'omw-1.4'])
+
+import re
+import pandas as pd
+import numpy as np
+import pickle
+
+from sqlalchemy import create_engine
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from sklearn.metrics import classification_report
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.multioutput import MultiOutputClassifier
 
 def load_data(database_filepath):
-    pass
+    # load data from database
+    engine = create_engine('sqlite:///'+database_filepath)
+    df = pd.read_sql("SELECT * from DisasterResponse", engine)
+    X = df['message']
+    Y = df.drop(['id', 'message', 'original', 'genre'], axis=1)
+    category_names = Y.columns
+    return X, Y, category_names
 
 
 def tokenize(text):
-    pass
+    # Normalize text
+    text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
+    
+    # Tokenize text
+    words = word_tokenize(text)
+    
+    # Remove stop words
+    words = [w for w in words if w not in stopwords.words("english")]
+    
+    # Reduce words to their root form using default pos
+    lemmatizer = WordNetLemmatizer()
+    clean_tokens = [lemmatizer.lemmatize(w) for w in words]
+    
+    return clean_tokens
 
 
 def build_model():
-    pass
+    # Build a machine learning pipeline
+    pipeline = Pipeline([
+        ('vect', CountVectorizer(tokenizer=tokenize)),
+        ('tfidf', TfidfTransformer()),
+        ('clf', MultiOutputClassifier(RandomForestClassifier()))
+    ])
+
+    # set parameters
+    parameters = {
+        'clf__estimator__n_estimators': [10],
+        'clf__estimator__min_samples_split': [2]
+    }
+    
+    model = GridSearchCV(pipeline, param_grid=parameters)
+
+    return model
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+    y_pred = model.predict(X_test)
+    # classification report for each category
+    for i in range(len(category_names)):
+        print('Performance report for category: {}'.format(category_names[i]))
+        print(classification_report(np.array(Y_test)[:,i], y_pred[:,i]), '---------------------------------------------------')  
 
 
 def save_model(model, model_filepath):
-    pass
+    with open(model_filepath, 'wb') as file:
+        pickle.dump(model, file)
 
 
 def main():
