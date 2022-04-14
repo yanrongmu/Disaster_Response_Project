@@ -57,6 +57,9 @@ def clean_data(df):
     # drop duplicates
     df.drop_duplicates(inplace=True)
 
+    # Remove rows with value of 2 for 'related 'column
+    df = df[df['related'] != 2]
+
     return df
 
 
